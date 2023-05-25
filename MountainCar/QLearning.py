@@ -38,9 +38,10 @@ class QLearning():
 
     def qLearning(self, iterations, alpha, epsilon, gamma):
         count = 0
+        initial_state_Q = np.array(iterations)
         while(count < iterations):
             obs = self.env.reset()
-            initial_state_Q = np.array(iterations)
+            initial_state = self.get_state(obs)
             print(obs)
             done = False
             while not done:
@@ -54,11 +55,14 @@ class QLearning():
                     alpha * (reward + gamma * self.maxAction(currentState) - self.Q[previousState, action])
                 #print('->', state, action, reward, obs, done)
             #guardo el Q optimo de un estado (inicial)
-            initial_state_Q[count] = self.maxAction((0,0))
-            count = count + 1
+            initial_state_Q[count] = self.maxAction(initial_state)
             #actualizar epsilon
+                #esto no va para este test
+
+            count = count + 1
         #Retornar el Q
-        return self.Q
+        ## --> guardar pkl
+        return self.Q, initial_state_Q
     
     def maxAction(self, state):
         return np.argmax(self.Q[state])
