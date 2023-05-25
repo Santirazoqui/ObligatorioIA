@@ -11,9 +11,9 @@ class QLearning():
         self.rewards = []
             
     def discretizar(self):
-        self.pos_space = np.linspace(-5, 5, 10)
-        self.vel_space = np.linspace(-3, 3, 2)
-        self.Q = np.zeros((11,3,3)) #cargar con -500
+        self.pos_space = np.linspace(-1.2, 0.6, 300)
+        self.vel_space = np.linspace(-0.07, 0.07, 200)
+        self.Q = np.full((301,201,3), -500) #cargar con -500?
 
     def get_state(self, obs):
         pos, vel = obs
@@ -23,13 +23,12 @@ class QLearning():
 
     def epsilon_greedy_policy(self, state, Q, epsilon=0.1):
         explore = np.random.binomial(1, epsilon)
+        #epsilon alto es mucho explore
         if explore:
             action = self.env.action_space.sample()
-            print('explore')
         # exploit
         else:
             action = np.argmax(Q[state])
-            print('exploit')
         return action
 
     def optimal_policy(state, Q):
@@ -38,11 +37,10 @@ class QLearning():
 
     def qLearning(self, iterations, alpha, epsilon, gamma):
         count = 0
-        initial_state_Q = np.array(iterations)
+        initial_state_Q = []
         while(count < iterations):
             obs = self.env.reset()
             initial_state = self.get_state(obs)
-            print(obs)
             done = False
             while not done:
                 previousState = self.get_state(obs)
@@ -51,11 +49,11 @@ class QLearning():
                 currentState = self.get_state(obs)
 
                 #actualizo Q
-                self.Q[previousState, action] = self.Q[previousState, action] + \
-                    alpha * (reward + gamma * self.maxAction(currentState) - self.Q[previousState, action])
-                #print('->', state, action, reward, obs, done)
+                self.Q[previousState][action] = self.Q[previousState][action] + \
+                    alpha * (reward + (gamma * self.maxQ(currentState)) - self.Q[previousState][action])
+
             #guardo el Q optimo de un estado (inicial)
-            initial_state_Q[count] = self.maxAction(initial_state)
+            initial_state_Q.append(self.maxQ(initial_state))
             #actualizar epsilon
                 #esto no va para este test
 
@@ -64,24 +62,29 @@ class QLearning():
         ## --> guardar pkl
         return self.Q, initial_state_Q
     
+    def maxQ(self, state):
+        action = np.argmax(self.Q[state])
+        return self.Q[state][action]
+
     def maxAction(self, state):
         return np.argmax(self.Q[state])
     
     #metodo de ejecucion
     def execute(self, iterations):
         count = 0
-        execution_rewards = np.array(iterations)
+        execution_rewards = []
         while count < iterations:
             reward_total = 0
             obs = self.env.reset()
             done = False
             while not done:
-                action = self.maxAction(obs)
+                state = self.get_state(obs)
+                action = self.maxAction(state)
                 obs, reward, done, _ = self.env.step(action)
                 reward_total += reward
-                self.env.render()
+                #self.env.render()
             
-            execution_rewards[count] = reward_total
+            execution_rewards.append(reward_total)
             count = count + 1
         self.rewards.append(statistics.mean(execution_rewards))
 
