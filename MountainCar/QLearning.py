@@ -11,9 +11,11 @@ class QLearning():
         self.rewards = []
             
     def discretizar(self):
-        self.pos_space = np.linspace(-1.2, 0.6, 300)
-        self.vel_space = np.linspace(-0.07, 0.07, 200)
-        self.Q = np.full((301,201,3), -500) #cargar con -500?
+        divPos = 33
+        divVel = 3
+        self.pos_space = np.linspace(-1.1, 0.5, divPos)
+        self.vel_space = np.linspace(-0.07, 0.07, divVel)
+        self.Q = np.zeros((divPos+1, divVel+1, 3))
 
     def get_state(self, obs):
         pos, vel = obs
@@ -51,9 +53,10 @@ class QLearning():
                 #actualizo Q
                 self.Q[previousState][action] = self.Q[previousState][action] + \
                     alpha * (reward + (gamma * self.maxQ(currentState)) - self.Q[previousState][action])
-
+                # -500 + (-1 -499 + 500)
             #guardo el Q optimo de un estado (inicial)
             initial_state_Q.append(self.maxQ(initial_state))
+
             #actualizar epsilon
                 #esto no va para este test
 
@@ -82,7 +85,7 @@ class QLearning():
                 action = self.maxAction(state)
                 obs, reward, done, _ = self.env.step(action)
                 reward_total += reward
-                #self.env.render()
+                self.env.render()
             
             execution_rewards.append(reward_total)
             count = count + 1
