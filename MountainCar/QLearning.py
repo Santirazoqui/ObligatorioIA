@@ -9,10 +9,9 @@ class QLearning():
         self.env = MountainCarEnv(render_mode = render)
         self.actions = list(range(self.env.action_space.n))
         self.rewards = []
+        self.initial_state = (0,0)
             
-    def discretizar(self):
-        divPos = 33
-        divVel = 3
+    def discretizar(self, divPos, divVel):
         self.pos_space = np.linspace(-1.1, 0.5, divPos)
         self.vel_space = np.linspace(-0.07, 0.07, divVel)
         self.Q = np.zeros((divPos+1, divVel+1, 3))
@@ -42,7 +41,7 @@ class QLearning():
         initial_state_Q = []
         while(count < iterations):
             obs = self.env.reset()
-            initial_state = self.get_state(obs)
+            # initial_state = self.get_state(obs)
             done = False
             while not done:
                 previousState = self.get_state(obs)
@@ -55,7 +54,7 @@ class QLearning():
                     alpha * (reward + (gamma * self.maxQ(currentState)) - self.Q[previousState][action])
                 # -500 + (-1 -499 + 500)
             #guardo el Q optimo de un estado (inicial)
-            initial_state_Q.append(self.maxQ(initial_state))
+            initial_state_Q.append(self.maxQ(self.initial_state))
 
             #actualizar epsilon
                 #esto no va para este test
@@ -90,5 +89,9 @@ class QLearning():
             execution_rewards.append(reward_total)
             count = count + 1
         self.rewards.append(statistics.mean(execution_rewards))
+        return statistics.mean(execution_rewards)
 
         #plot validacion con promedio de recompensas
+    
+    def setQ(self, Q):
+        self.Q = Q
