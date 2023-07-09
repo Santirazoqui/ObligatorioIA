@@ -7,17 +7,17 @@ from board import Board
 WIN_SCORE = 100000
 LOSE_SCORE = -1000000
 
-class MiniMaxAgent(Agent):
-    def __init__(self, minimax_max_depth: int, player=1):
+class EspectiMaxAgent(Agent):
+    def __init__(self, especti_max_depth: int, player=1):
         self.player = player
         self.opponent = 2
-        self.max_depth = minimax_max_depth
+        self.max_depth = especti_max_depth
     
     def next_action(self, obs):
-        pos, _ = self.minimax(obs, self.player, self.max_depth, 0, -sys.maxsize, sys.maxsize)
+        pos, _ = self.espectiMax(obs, self.player, self.max_depth, 0)
         return pos
     
-    def minimax(self, board: Board, current_player: int, max_depth, current_depth, alpha, beta) -> tuple[int,int]:
+    def espectiMax(self, board: Board, current_player: int, max_depth, current_depth) -> tuple[int,int]:
         #Casos base
         #(1) chequeo si alguien gano o si se lleno el tablero
         if(board.is_final()):
@@ -42,36 +42,30 @@ class MiniMaxAgent(Agent):
         chosen_action = random.choice(possible_actions)
         
         #Caso juega oponente
-        if current_player != self.player: #mini
-            value = sys.maxsize
+        if current_player != self.player: #especti
+            average_eval = 0
+            uniform_prob = 1 / len(possible_actions)
             for action in possible_actions:
                 clone_board = board.clone()
                 clone_board.add_tile(action, self.opponent)
-                _, new_value = self.minimax(clone_board, self.player, max_depth, current_depth + 1) 
-                        #No me importa la nueva accion _ ?
-                if (new_value < value):
-                    value = new_value
-                    chosen_action = action
+                _, new_value = self.espectiMax(clone_board, self.player, max_depth, current_depth + 1) 
+                average_eval += uniform_prob * new_value
+                value = average_eval
                 #alfa beta prunning
-                beta = min(value, beta) 
-                if alpha >= beta:
-                    break
-
+            
         #Caso juega jugador
         else: #(current_player == self.player) max
             value = -sys.maxsize
             for action in possible_actions:
                 clone_board = board.clone()
                 clone_board.add_tile(action, self.player)
-                _, new_value = self.minimax(clone_board, self.opponent, max_depth, current_depth + 1)
+                _, new_value = self.espectiMax(clone_board, self.opponent, max_depth, current_depth + 1)
                         #No me importa la nueva accion?
                 if new_value > value:
                     value = new_value
                     chosen_action = action
                 #alfa beta prunning
-                alpha = max(value, alpha) 
-                if alpha >= beta:
-                    break
+        
         return chosen_action, value
 
     def evaluation_Function(self, board: Board, current_player: int):
@@ -81,7 +75,7 @@ class MiniMaxAgent(Agent):
         return eval
     
     def heuristic_middle_pieces(self, board: Board):
-        alfa = 5
+        alfa = 2
         player_score = 0
         opponent_score = 0
         grid = board._grid
@@ -94,7 +88,7 @@ class MiniMaxAgent(Agent):
         return alfa * (player_score - opponent_score)
 
     def heuristic_fichas_comibles(self, board: Board, current_player):
-        alfa = -5
+        alfa = -10
         player_score = 0
         opponent_score = 0
         grid = board._grid
@@ -143,7 +137,7 @@ class MiniMaxAgent(Agent):
         return alfa*(player_score - opponent_score)
 
     def heuristic_score_lines(self, board: Board, current_player):
-        alfa = 10
+        alfa = 5
         player_score = 0
         opponent_score = 0
         grid = board._grid
