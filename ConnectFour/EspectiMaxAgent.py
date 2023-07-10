@@ -51,7 +51,6 @@ class EspectiMaxAgent(Agent):
                 _, new_value = self.espectiMax(clone_board, self.player, max_depth, current_depth + 1) 
                 average_eval += uniform_prob * new_value
                 value = average_eval
-                #alfa beta prunning
             
         #Caso juega jugador
         else: #(current_player == self.player) max
@@ -60,18 +59,16 @@ class EspectiMaxAgent(Agent):
                 clone_board = board.clone()
                 clone_board.add_tile(action, self.player)
                 _, new_value = self.espectiMax(clone_board, self.opponent, max_depth, current_depth + 1)
-                        #No me importa la nueva accion?
                 if new_value > value:
                     value = new_value
                     chosen_action = action
-                #alfa beta prunning
         
         return chosen_action, value
 
     def evaluation_Function(self, board: Board, current_player: int):
         eval = self.heuristic_score_lines(board, current_player)
-        eval += self.heuristic_fichas_comibles(board, current_player)
-        eval += self.heuristic_middle_pieces(board)
+        #eval += self.heuristic_fichas_comibles(board, current_player)
+        #eval += self.heuristic_middle_pieces(board)
         return eval
     
     def heuristic_middle_pieces(self, board: Board):

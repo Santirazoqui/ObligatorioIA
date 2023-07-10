@@ -35,11 +35,14 @@ class MiniMaxAgent(Agent):
         if(current_depth > max_depth):
             val = self.evaluation_Function(board, current_player)
             return (2, val)
+            #eturn (0, 0)
 
         #Casos no base
         possible_actions = board.get_posible_actions()
+        ran = random.randint(0, len(possible_actions)-1)
+
         # tomo una acción random para empezar
-        chosen_action = random.choice(possible_actions)
+        chosen_action = possible_actions[ran]
         
         #Caso juega oponente
         if current_player != self.player: #mini
@@ -47,12 +50,12 @@ class MiniMaxAgent(Agent):
             for action in possible_actions:
                 clone_board = board.clone()
                 clone_board.add_tile(action, self.opponent)
-                _, new_value = self.minimax(clone_board, self.player, max_depth, current_depth + 1) 
+                _, new_value = self.minimax(clone_board, self.player, max_depth, current_depth + 1, alpha, beta) 
                         #No me importa la nueva accion _ ?
                 if (new_value < value):
                     value = new_value
                     chosen_action = action
-                #alfa beta prunning
+                #alfa beta prunning - poda beta
                 beta = min(value, beta) 
                 if alpha >= beta:
                     break
@@ -63,12 +66,11 @@ class MiniMaxAgent(Agent):
             for action in possible_actions:
                 clone_board = board.clone()
                 clone_board.add_tile(action, self.player)
-                _, new_value = self.minimax(clone_board, self.opponent, max_depth, current_depth + 1)
-                        #No me importa la nueva accion?
+                _, new_value = self.minimax(clone_board, self.opponent, max_depth, current_depth + 1, alpha, beta)
                 if new_value > value:
                     value = new_value
                     chosen_action = action
-                #alfa beta prunning
+                #alfa beta prunning - poda alfa
                 alpha = max(value, alpha) 
                 if alpha >= beta:
                     break
@@ -76,8 +78,8 @@ class MiniMaxAgent(Agent):
 
     def evaluation_Function(self, board: Board, current_player: int):
         eval = self.heuristic_score_lines(board, current_player)
-        eval += self.heuristic_fichas_comibles(board, current_player)
-        eval += self.heuristic_middle_pieces(board)
+        #eval += self.heuristic_fichas_comibles(board, current_player)
+        #eval += self.heuristic_middle_pieces(board)
         return eval
     
     def heuristic_middle_pieces(self, board: Board):
@@ -152,9 +154,9 @@ class MiniMaxAgent(Agent):
             #agarro el array de la fila
             row_array = list(grid[row,:])
             for cell in range(board.length - 3):
-                #tomo las 4 siguientes
+                #tomo las 4 siguientes del array de la fila
                 line = row_array[cell: cell + 4]
-                #evaluo el puntaje de esa linea
+                #evaluo el puntaje de esa linea y lo sumo al agente correspondiente
                 line_score = self.evaluate_line(line, current_player)
                 if(cell == self.player):
                     player_score += line_score
