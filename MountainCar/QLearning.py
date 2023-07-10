@@ -96,15 +96,18 @@ class QLearning():
     def setQ(self, Q):
         self.Q = Q
 
-    def qLearning_bajar_epsilon_1(self, max_iterations, alpha, initial_epsilon, gamma):
+    def qLearning_bajar_epsilon_1(self, max_iterations, alpha, initial_epsilon, gamma, min_eps):
         count = 0
         initial_state_Q = []
         epsilon_decay_list = []
         final_epsilon = 0.01
+        epsilon = initial_epsilon
         while(count < max_iterations):
             epsilonDecreaseRate = max(((max_iterations - count) / max_iterations), 0)
-            epsilon = ((initial_epsilon - final_epsilon) * epsilonDecreaseRate) + final_epsilon
+            if(count > min_eps):
+                epsilon = ((initial_epsilon - final_epsilon) * epsilonDecreaseRate) + final_epsilon
             epsilon_decay_list.append(epsilon)
+
             obs = self.env.reset()
             done = False
             while not done:
@@ -121,39 +124,81 @@ class QLearning():
             count = count + 1
         return self.Q, initial_state_Q, epsilon_decay_list
     
-
-    #Q learning de mateo que supuestamente funciona
-    def qLearning_2(self, episodes, 
-                    learning_rate, 
-                    discount_factor, 
-                    exploration_rate, 
-                    max_exploration_rate, 
-                    min_exploration_rate,
-                    exploration_decay_rate):
+    def qLearning_decay_learning_rate(self, 
+                                      max_iterations, 
+                                      initial_alpha, 
+                                      final_alpha,  
+                                      initial_epsilon, 
+                                      gamma, 
+                                      min_eps):
+        count = 0
         initial_state_Q = []
-        for episode in range(episodes):
+        epsilon_decay_list = []
+        final_epsilon = 0.01
+        epsilon = initial_epsilon
+        self.alpha_decay_list = []
+        alpha = initial_alpha
+        while(count < max_iterations):
+            epsilonDecreaseRate = max(((max_iterations - count) / max_iterations), 0)
+            if(count > min_eps):
+                epsilon = ((initial_epsilon - final_epsilon) * epsilonDecreaseRate) + final_epsilon
+                alpha = max(final_alpha, initial_alpha * (0.85 ** (count//100)))
+            epsilon_decay_list.append(epsilon)
+            self.alpha_decay_list.append(alpha)
+
             obs = self.env.reset()
             done = False
-            total_reward = 0
+            while not done:
+                previousState = self.get_state(obs)
+                action = self.epsilon_greedy_policy(previousState, self.Q, epsilon)
+                obs, reward, done, _ = self.env.step(action)
+                currentState = self.get_state(obs)
 
-            while(not done):
-                state = self.get_state(obs)
-                # Elige una acción utilizando la política epsilon-greedy
-                exploration_rate_threshold = np.random.uniform(0, 1)
-                if exploration_rate_threshold > exploration_rate:
-                    action = np.argmax(self.Q[state[0],state[1]])
-                else:
-                    action = self.env.action_space.sample()
-
-                # Realiza la acción y observa el nuevo estado y la recompensa
-                new_obs, reward, done, _ = self.env.step(action)
-                new_state = self.get_state(new_obs)
-                # Actualiza los valores de Q utilizando la ecuación de Q-Learning
-                self.Q[state[0],state[1],action] += learning_rate * (
-                    reward + discount_factor * np.max(self.Q[new_state[0],new_state[1]]) - self.Q[state[0],state[1],action] 
-                )
-
-                total_reward += reward
-                obs = new_obs
+                self.Q[previousState][action] = self.Q[previousState][action] + \
+                    alpha * (reward + (gamma * self.maxQ(currentState)) - self.Q[previousState][action])
+                
             initial_state_Q.append(self.maxQ(self.initial_state))
+
+            count = count + 1
+        return self.Q, initial_state_Q, epsilon_decay_list
+    
+    def qLearning_decay_learning_rate_2(self, 
+                                      max_iterations, 
+                                      initial_alpha, 
+                                      final_alpha,  
+                                      initial_epsilon, 
+                                      gamma, 
+                                      min_eps):
+        count = 0
+        initial_state_Q = []
+        epsilon_decay_list = []
+        final_epsilon = 0.01
+        epsilon = initial_epsilon
+        self.alpha_decay_list = []
+        alpha = initial_alpha
+        while(count < max_iterations):
+            epsilonDecreaseRate = max(((max_iterations - count) / max_iterations), 0)
+            alphaDecreaseRate = max(((max_iterations - count) / max_iterations), 0)
+            if(count > min_eps):
+                epsilon = ((initial_epsilon - final_epsilon) * epsilonDecreaseRate) + final_epsilon
+                alpha = ((initial_alpha - final_alpha) * alphaDecreaseRate) + final_alpha
+            epsilon_decay_list.append(epsilon)
+            self.alpha_decay_list.append(alpha)
+
+            obs = self.env.reset()
+            done = False
+            while not done:
+                previousState = self.get_state(obs)
+                action = self.epsilon_greedy_policy(previousState, self.Q, epsilon)
+                obs, reward, done, _ = self.env.step(action)
+                currentState = self.get_state(obs)
+
+                self.Q[previousState][action] = self.Q[previousState][action] + \
+                    alpha * (reward + (gamma * self.maxQ(currentState)) - self.Q[previousState][action])
+                
+            initial_state_Q.append(self.maxQ(self.initial_state))
+
+            count = count + 1
+        return self.Q, initial_state_Q, epsilon_decay_list
+    
         
